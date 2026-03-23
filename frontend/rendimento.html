@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Rendimento — PGcallsystem</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,800;1,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="page-chamados">
+
+<div class="bg-scene" aria-hidden="true">
+  <canvas id="hacker-canvas"></canvas>
+</div>
+
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <h1 class="logo">PGcallsystem <span class="line" aria-hidden="true"></span></h1>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="chamados.html" class="sidebar-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Início
+    </a>
+    <a href="rendimento.html" class="sidebar-link active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
+      Rendimento Geral
+    </a>
+    <a href="clientes.html" class="sidebar-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Clientes
+    </a>
+  </nav>
+</aside>
+
+<div class="container" style="max-width: 1200px;">
+  <header class="app-header">
+    <button class="menu-toggle" id="menu-toggle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+    <a href="chamados.html" style="text-decoration: none; color: inherit;"><h1 class="logo">PGcallsystem <span class="line" aria-hidden="true"></span></h1></a>
+    <div class="app-header-actions">
+      <span class="user-pill" id="user-pill"></span>
+    </div>
+  </header>
+
+  <h2 class="panel-title">Rendimento Geral e Estatísticas</h2>
+  
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">Faturamento Total (Mês Atual)</div>
+      <div class="stat-value" id="total-faturamento">R$ 0,00</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Chamados Concluídos</div>
+      <div class="stat-value" id="total-concluidos">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Melhor Técnico</div>
+      <div class="stat-value" id="melhor-tecnico">—</div>
+    </div>
+  </div>
+
+  <div class="chamados-grid" style="margin-top: 2rem; grid-template-columns: 1fr 1fr;">
+    <section class="panel">
+      <h3 class="panel-title">Desempenho por Técnico</h3>
+      <table class="data-table-stats">
+        <thead>
+          <tr><th>Técnico</th><th>Mês</th><th>Qtd</th><th>Lucro</th></tr>
+        </thead>
+        <tbody id="tbody-tecnicos"></tbody>
+      </table>
+    </section>
+
+    <section class="panel">
+      <h3 class="panel-title">Faturamento Diário (Empresa)</h3>
+      <table class="data-table-stats">
+        <thead>
+          <tr><th>Data</th><th>Ganhos</th></tr>
+        </thead>
+        <tbody id="tbody-empresa"></tbody>
+      </table>
+    </section>
+  </div>
+</div>
+
+<script src="background.js"></script>
+<script src="auth.js"></script>
+<script src="rendimento.js"></script>
+</body>
+</html>

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Usuários — PGcallsystem</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,800;1,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="page-chamados">
+
+<div class="bg-scene" aria-hidden="true">
+  <canvas id="hacker-canvas"></canvas>
+</div>
+
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <h1 class="logo">
+      PGcallsystem
+      <span class="line" aria-hidden="true"></span>
+    </h1>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="chamados.html" class="sidebar-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Início
+    </a>
+    <a href="chamados.html" class="sidebar-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+      Chamados
+    </a>
+    <a href="clientes.html" class="sidebar-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Clientes
+    </a>
+    <a href="usuarios.html" class="sidebar-link active" id="nav-usuarios-sidebar" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>
+      Usuários
+    </a>
+    <a href="pecas.html" class="sidebar-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+      Peças
+    </a>
+  </nav>
+  <div class="sidebar-footer" style="margin-top: auto;">
+    <button type="button" class="btn-link link-quiet" id="btn-sair">Sair</button>
+  </div>
+</aside>
+
+<div class="container">
+  <header class="app-header">
+    <button class="menu-toggle" id="menu-toggle" aria-label="Abrir menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <a href="chamados.html" style="text-decoration: none; color: inherit;">
+      <h1 class="logo">
+        PGcallsystem
+        <span class="line" aria-hidden="true"></span>
+      </h1>
+    </a>
+    <div class="app-header-actions">
+      <a href="chamados.html" class="menu-toggle" title="Início">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </a>
+      <span class="user-pill" id="user-pill"></span>
+    </div>
+  </header>
+
+  <div class="chamados-grid">
+    <section class="panel">
+      <h2 class="panel-title">Novo usuário</h2>
+      <label class="field-label">Login</label>
+      <div class="input-group input-group-fill"><input type="text" id="u_username" autocomplete="username"></div>
+      <label class="field-label">Senha</label>
+      <div class="input-group input-group-fill"><input type="password" id="u_password" autocomplete="new-password"></div>
+      <label class="field-label">Nome</label>
+      <div class="input-group input-group-fill"><input type="text" id="u_nome"></div>
+      <div class="options" id="wrap-admin" hidden>
+        <label><input type="checkbox" id="u_admin"> Administrador</label>
+      </div>
+      <div class="options">
+        <label><input type="checkbox" id="u_pode_add"> Pode cadastrar usuários</label>
+      </div>
+      <button type="button" class="btn-primary" id="btn-criar-user">
+        <span class="btn-flare" aria-hidden="true"></span>
+        <span>Criar</span>
+      </button>
+    </section>
+
+    <section class="panel">
+      <h2 class="panel-title">Lista</h2>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th>Login</th><th>Nome</th><th>Perfil</th><th>Cadastra users</th></tr></thead>
+          <tbody id="tbody-users"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script src="background.js"></script>
+<script src="auth.js"></script>
+<script src="usuarios.js"></script>
+</body>
+</html>

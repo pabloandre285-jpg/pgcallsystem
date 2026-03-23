@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Portal do Cliente — PGcallsystem</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,700;0,800;1,700;1,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="page-login">
+
+<div class="bg-scene" aria-hidden="true">
+  <canvas id="hacker-canvas"></canvas>
+</div>
+
+<div class="container" style="max-width: 800px;">
+  <header class="app-header" style="justify-content: center; margin-bottom: 2rem;">
+    <h1 class="logo">
+      PORTAL DO CLIENTE
+      <span class="line" aria-hidden="true"></span>
+    </h1>
+  </header>
+
+  <div class="dashboard-summary" style="grid-template-columns: 1fr 1fr; margin-bottom: 2rem;">
+    <button type="button" class="btn-primary" id="btn-novo-chamado-cliente">
+      <span>ABRIR NOVO CHAMADO</span>
+    </button>
+    <button type="button" class="btn-primary" id="btn-sair-portal" style="border-color: var(--danger);">
+      <span>SAIR DO PORTAL</span>
+    </button>
+  </div>
+
+  <section class="panel">
+    <h2 class="panel-title">Meus Chamados</h2>
+    <div class="table-wrap">
+      <table class="data-table-stats" style="width: 100%;">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Título</th>
+            <th>Status</th>
+            <th>Data</th>
+          </tr>
+        </thead>
+        <tbody id="lista-chamados-cliente">
+          <tr><td colspan="4">Carregando seus chamados...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<!-- Modal Novo Chamado Cliente -->
+<div id="modal-portal-novo" class="sidebar-overlay" style="display:none; opacity: 1; pointer-events: auto; background: rgba(0,0,0,0.8); align-items: center; justify-content: center;">
+  <div class="login-box" style="max-width: 500px; width: 90%;">
+    <h2 class="panel-title">Nova Solicitação</h2>
+    <div class="input-group">
+      <input type="text" id="portal-titulo" placeholder="Título do problema (ex: Tela quebrada)">
+    </div>
+    <div class="input-group">
+      <textarea id="portal-descricao" placeholder="Descreva o problema com detalhes..." style="min-height: 100px;"></textarea>
+    </div>
+    <div class="input-group" style="flex-direction: column; padding: 1rem; gap: 0.5rem; background: rgba(0,0,0,0.4);">
+      <label class="field-label" style="margin:0; font-size: 0.75rem;">FOTO DO DEFEITO (OPCIONAL)</label>
+      <input type="file" id="portal-foto" accept="image/*" style="font-size: 0.8rem; color: var(--text-muted);">
+      <div id="portal-preview" style="display:none; margin-top: 0.5rem; text-align: center;">
+        <img id="img-preview" src="" style="max-width: 100%; max-height: 150px; border-radius: 8px; border: 1px solid var(--neon-soft);">
+      </div>
+    </div>
+    <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+      <button type="button" class="btn-primary" id="btn-portal-enviar">ENVIAR</button>
+      <button type="button" class="btn-primary" id="btn-portal-cancelar" style="background: #333;">CANCELAR</button>
+    </div>
+  </div>
+</div>
+
+<script src="background.js"></script>
+<script src="auth.js"></script>
+<script>
+  requireAuthPage();
+  const user = getUser();
+  
+  // Se não for cliente ou não tiver cliente_id, redireciona (segurança básica front-end)
+  if (user.role !== 'cliente' && !user.cliente_id && user.role !== 'admin') {
+    window.location.href = 'index.html';
+  }
+
+  async function carregarMeusChamados() {
+    try {
+      const res = await authFetch('/portal/tickets');
+      const tickets = await res.json();
+      const tbody = document.getElementById('lista-chamados-cliente');
+      
+      if (tickets.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4">Você ainda não possui chamados abertos.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = tickets.map(t => `
+        <tr>
+          <td>#${t.id}</td>
+          <td>${t.titulo}</td>
+          <td><span class="badge badge-aberto">${t.status.replace('_', ' ').toUpperCase()}</span></td>
+          <td>${new Date(t.created_at).toLocaleDateString()}</td>
+        </tr>
+      `).join('');
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  document.getElementById('btn-novo-chamado-cliente').onclick = () => {
+    document.getElementById('modal-portal-novo').style.display = 'flex';
+    document.getElementById('portal-foto').value = '';
+    document.getElementById('portal-preview').style.display = 'none';
+  };
+
+  document.getElementById('portal-foto').onchange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (re) => {
+        document.getElementById('img-preview').src = re.target.result;
+        document.getElementById('portal-preview').style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  document.getElementById('btn-portal-cancelar').onclick = () => {
+    document.getElementById('modal-portal-novo').style.display = 'none';
+  };
+
+  document.getElementById('btn-portal-enviar').onclick = async () => {
+    const titulo = document.getElementById('portal-titulo').value.trim();
+    const descricao = document.getElementById('portal-descricao').value.trim();
+    const foto = document.getElementById('img-preview').src;
+    
+    if (!titulo) return alert('Informe um título.');
+
+    const payload = { titulo, descricao };
+    if (document.getElementById('portal-preview').style.display === 'block') {
+      payload.foto_defeito = foto;
+    }
+
+    const res = await authFetch('/portal/tickets', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+
+    if (res.ok) {
+      document.getElementById('modal-portal-novo').style.display = 'none';
+      document.getElementById('portal-titulo').value = '';
+      document.getElementById('portal-descricao').value = '';
+      document.getElementById('portal-foto').value = '';
+      document.getElementById('portal-preview').style.display = 'none';
+      carregarMeusChamados();
+      showToast('Chamado enviado com sucesso!');
+    }
+  };
+
+  document.getElementById('btn-sair-portal').onclick = () => logout();
+
+  carregarMeusChamados();
+</script>
+</body>
+</html>

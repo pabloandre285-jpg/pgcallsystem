@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Abrir Chamado — PGcallsystem</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,700;0,800;1,800&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    :root{--neon:#39ff14;--neon-soft:rgba(57,255,20,.45);--green:#2e7d32;--green-light:#e8f5e9;--bg:#f5f5f5;--card:#fff;--text:#1a1a1a;--muted:#666;--border:#e0e0e0;--danger:#e53935;--radius:14px}
+    html,body{min-height:100vh;font-family:"Segoe UI",system-ui,sans-serif}
+    body{display:flex;min-height:100vh;background:#0a0a0a}
+
+    /* LEFT */
+    .left{width:360px;flex-shrink:0;background:linear-gradient(160deg,#050f05,#0a1a0a 60%,#000);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3rem 2rem;position:relative;overflow:hidden;border-right:1px solid rgba(57,255,20,.15)}
+    .left::before{content:'';position:absolute;inset:0;background-image:radial-gradient(circle at 2px 2px,rgba(57,255,20,.07) 1px,transparent 0);background-size:28px 28px}
+    .left::after{content:'';position:absolute;bottom:-80px;left:-80px;width:280px;height:280px;background:radial-gradient(circle,rgba(57,255,20,.1) 0%,transparent 70%);pointer-events:none}
+    .pg-badge{position:relative;z-index:1;width:100px;height:100px;border-radius:24px;background:linear-gradient(135deg,#0d2818,#1a4a1a);border:2.5px solid var(--neon-soft);box-shadow:0 0 36px rgba(57,255,20,.3),inset 0 0 18px rgba(57,255,20,.08);display:flex;align-items:center;justify-content:center;font-family:"Montserrat",sans-serif;font-weight:800;font-style:italic;font-size:2.6rem;color:var(--neon);text-shadow:0 0 18px var(--neon),0 0 36px rgba(57,255,20,.4);margin-bottom:1.75rem}
+    .left-title{position:relative;z-index:1;font-family:"Montserrat",sans-serif;font-weight:800;font-size:1.5rem;color:#fff;text-align:center;line-height:1.25;margin-bottom:.75rem}
+    .left-title span{color:var(--neon)}
+    .left-desc{position:relative;z-index:1;color:rgba(255,255,255,.5);font-size:.88rem;text-align:center;line-height:1.65;margin-bottom:2rem}
+    .left-features{position:relative;z-index:1;display:flex;flex-direction:column;gap:.65rem;width:100%}
+    .feat{display:flex;align-items:center;gap:.65rem;color:rgba(255,255,255,.55);font-size:.8rem}
+    .feat-dot{width:7px;height:7px;border-radius:50%;background:var(--neon);box-shadow:0 0 7px var(--neon);flex-shrink:0}
+
+    /* RIGHT */
+    .right{flex:1;background:var(--bg);display:flex;align-items:flex-start;justify-content:center;padding:3rem 2rem;overflow-y:auto}
+    .card{background:var(--card);border-radius:var(--radius);box-shadow:0 4px 24px rgba(0,0,0,.08);padding:2.5rem;width:100%;max-width:540px}
+    .card-title{font-size:1.35rem;font-weight:700;color:var(--text);margin-bottom:.3rem}
+    .card-sub{font-size:.83rem;color:var(--muted);margin-bottom:1.75rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border)}
+    .fg{margin-bottom:1.2rem}
+    .lbl{display:block;font-size:.8rem;font-weight:600;color:var(--text);margin-bottom:.35rem}
+    .lbl .req{color:var(--danger);margin-left:2px}
+    .hint{font-size:.73rem;color:var(--muted);margin-bottom:.35rem}
+    .inp,.ta,.sel{width:100%;padding:.72rem 1rem;border:1.5px solid var(--border);border-radius:10px;font-size:.88rem;color:var(--text);background:#fafafa;transition:border-color .2s,box-shadow .2s;font-family:inherit}
+    .inp:focus,.ta:focus,.sel:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(46,125,50,.12);background:#fff}
+    .ta{min-height:110px;resize:vertical}
+    .radio-group{display:flex;flex-direction:column;gap:.45rem;margin-top:.2rem}
+    .ri{display:flex;align-items:center;gap:.6rem;padding:.55rem .75rem;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;transition:all .15s;font-size:.86rem;color:var(--text)}
+    .ri:hover{border-color:var(--green);background:#f1f8f1}
+    .ri.sel{border-color:var(--green);background:#f1f8f1}
+    .ri input[type=radio]{accent-color:var(--green);width:15px;height:15px}
+    .err{color:var(--danger);font-size:.76rem;margin-top:.3rem;display:none}
+    .btn-send{width:100%;padding:.95rem;background:linear-gradient(135deg,#2e7d32,#1b5e20);color:#fff;border:none;border-radius:10px;font-size:.95rem;font-weight:700;letter-spacing:.04em;cursor:pointer;transition:all .2s;margin-top:.5rem;box-shadow:0 4px 14px rgba(46,125,50,.3)}
+    .btn-send:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(46,125,50,.4)}
+    .btn-send:disabled{opacity:.6;cursor:not-allowed;transform:none}
+
+    /* SUCCESS */
+    .success{display:none;flex-direction:column;align-items:center;text-align:center;padding:1.5rem 0}
+    .suc-icon{width:76px;height:76px;border-radius:50%;background:var(--green-light);display:flex;align-items:center;justify-content:center;margin-bottom:1.25rem}
+    .suc-icon svg{color:var(--green)}
+    .suc-title{font-size:1.3rem;font-weight:700;color:var(--text);margin-bottom:.4rem}
+    .suc-num{font-size:2rem;font-weight:800;color:var(--green);margin:.4rem 0 .9rem}
+    .suc-msg{color:var(--muted);font-size:.87rem;line-height:1.65;max-width:360px}
+    .btn-new{margin-top:1.4rem;padding:.7rem 1.8rem;background:var(--green-light);color:var(--green);border:1.5px solid var(--green);border-radius:10px;font-weight:600;cursor:pointer;font-size:.87rem;transition:all .2s}
+    .btn-new:hover{background:#dcedc8}
+
+    @media(max-width:768px){body{flex-direction:column}.left{width:100%;padding:2rem 1.5rem;min-height:auto}.left-features{display:none}.right{padding:1.5rem 1rem}.card{padding:1.5rem}}
+  </style>
+</head>
+<body>
+
+<div class="left">
+  <div class="pg-badge">PG</div>
+  <h1 class="left-title">Chamados de <span>TI</span></h1>
+  <p class="left-desc">Faça aqui a solicitação do seu chamado. Nossa equipe técnica irá atendê-lo o mais breve possível.</p>
+  <div class="left-features">
+    <div class="feat"><div class="feat-dot"></div><span>Atendimento rápido e eficiente</span></div>
+    <div class="feat"><div class="feat-dot"></div><span>Equipe técnica especializada</span></div>
+    <div class="feat"><div class="feat-dot"></div><span>Suporte para todos os equipamentos</span></div>
+    <div class="feat"><div class="feat-dot"></div><span>Acompanhe o status do seu chamado</span></div>
+  </div>
+</div>
+
+<div class="right">
+  <div class="card">
+
+    <div id="form-wrap">
+      <h2 class="card-title">Nova Solicitação</h2>
+      <p class="card-sub">Preencha os campos abaixo para registrar seu chamado.</p>
+
+      <div class="fg">
+        <label class="lbl" for="f-nome">Qual seu nome? <span class="req">*</span></label>
+        <input type="text" id="f-nome" class="inp" placeholder="Digite seu nome completo">
+        <div class="err" id="err-nome">Informe seu nome.</div>
+      </div>
+
+      <div class="fg">
+        <label class="lbl" for="f-empresa">Qual a sua empresa?</label>
+        <p class="hint">Informe o nome da empresa em que trabalha</p>
+        <input type="text" id="f-empresa" class="inp" placeholder="Digite aqui...">
+      </div>
+
+      <div class="fg">
+        <label class="lbl" for="f-assunto">Qual o assunto do seu chamado? <span class="req">*</span></label>
+        <p class="hint">Descreva brevemente o problema</p>
+        <input type="text" id="f-assunto" class="inp" placeholder="Ex: Computador não liga, impressora com erro...">
+        <div class="err" id="err-assunto">Informe o assunto.</div>
+      </div>
+
+      <div class="fg">
+        <label class="lbl">Qual o seu equipamento? <span class="req">*</span></label>
+        <p class="hint">Selecione para qual equipamento você deseja atendimento</p>
+        <div class="radio-group">
+          <label class="ri"><input type="radio" name="equip" value="Notebook"> Notebook</label>
+          <label class="ri"><input type="radio" name="equip" value="Desktop / Computador"> Desktop / Computador</label>
+          <label class="ri"><input type="radio" name="equip" value="Impressora"> Impressora</label>
+          <label class="ri"><input type="radio" name="equip" value="Monitor"> Monitor</label>
+          <label class="ri"><input type="radio" name="equip" value="Celular"> Celular</label>
+          <label class="ri"><input type="radio" name="equip" value="Outros (Rede, Internet, Servidor, etc)"> Outros (Rede, Internet, Servidor, etc)</label>
+        </div>
+        <div class="err" id="err-equip">Selecione o equipamento.</div>
+      </div>
+
+      <div class="fg">
+        <label class="lbl" for="f-desc">Descrição <span class="req">*</span></label>
+        <p class="hint">Descreva detalhes da solicitação: qual o erro, qual programa, qual problema apresentado</p>
+        <textarea id="f-desc" class="ta" placeholder="Digite aqui..."></textarea>
+        <div class="err" id="err-desc">Informe a descrição.</div>
+      </div>
+
+      <div class="err" id="err-geral" style="font-size:.84rem;margin-bottom:.5rem"></div>
+      <button type="button" class="btn-send" id="btn-send">Enviar Solicitação</button>
+    </div>
+
+    <div class="success" id="success">
+      <div class="suc-icon">
+        <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div class="suc-title">Chamado registrado!</div>
+      <div class="suc-num" id="suc-num">#000</div>
+      <p class="suc-msg">Seu chamado foi enviado com sucesso. Nossa equipe técnica irá analisá-lo e entrará em contato em breve.</p>
+      <button type="button" class="btn-new" id="btn-new">Abrir outro chamado</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const API = "";
+
+  document.querySelectorAll('.ri input[type=radio]').forEach(r => {
+    r.addEventListener('change', () => {
+      document.querySelectorAll('.ri').forEach(i => i.classList.remove('sel'));
+      r.closest('.ri').classList.add('sel');
+    });
+  });
+
+  function showErr(id, show, msg) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.style.display = show ? 'block' : 'none';
+    if (msg) el.textContent = msg;
+  }
+
+  document.getElementById('btn-send').addEventListener('click', async () => {
+    const nome    = document.getElementById('f-nome').value.trim();
+    const empresa = document.getElementById('f-empresa').value.trim();
+    const assunto = document.getElementById('f-assunto').value.trim();
+    const equip   = document.querySelector('input[name="equip"]:checked')?.value || '';
+    const desc    = document.getElementById('f-desc').value.trim();
+
+    let ok = true;
+    showErr('err-nome',   !nome,    'Informe seu nome.');    if (!nome)    ok = false;
+    showErr('err-assunto',!assunto, 'Informe o assunto.');   if (!assunto) ok = false;
+    showErr('err-equip',  !equip,   'Selecione o equipamento.'); if (!equip) ok = false;
+    showErr('err-desc',   !desc,    'Informe a descrição.'); if (!desc)    ok = false;
+    showErr('err-geral', false);
+    if (!ok) return;
+
+    const btn = document.getElementById('btn-send');
+    btn.disabled = true;
+    btn.textContent = 'Enviando...';
+
+    const titulo   = '[' + equip + '] ' + assunto;
+    const descFinal = 'Solicitante: ' + nome + (empresa ? ' — ' + empresa : '') + '\nEquipamento: ' + equip + '\n\n' + desc;
+
+    try {
+      const res = await fetch(API + '/chamado-publico', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nome, empresa, titulo, descricao: descFinal })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        document.getElementById('form-wrap').style.display = 'none';
+        document.getElementById('success').style.display = 'flex';
+        document.getElementById('suc-num').textContent = '#' + data.id;
+      } else {
+        showErr('err-geral', true, data.message || 'Erro ao enviar. Tente novamente.');
+        btn.disabled = false;
+        btn.textContent = 'Enviar Solicitação';
+      }
+    } catch(e) {
+      showErr('err-geral', true, 'Erro de conexão. Verifique sua internet.');
+      btn.disabled = false;
+      btn.textContent = 'Enviar Solicitação';
+    }
+  });
+
+  document.getElementById('btn-new').addEventListener('click', () => {
+    document.getElementById('form-wrap').style.display = 'block';
+    document.getElementById('success').style.display = 'none';
+    ['f-nome','f-empresa','f-assunto','f-desc'].forEach(id => document.getElementById(id).value = '');
+    document.querySelectorAll('.ri').forEach(i => i.classList.remove('sel'));
+    document.querySelectorAll('input[name="equip"]').forEach(r => r.checked = false);
+    const btn = document.getElementById('btn-send');
+    btn.disabled = false;
+    btn.textContent = 'Enviar Solicitação';
+  });
+</script>
+</body>
+</html>

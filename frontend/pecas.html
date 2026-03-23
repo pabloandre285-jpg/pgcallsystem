@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Peças — PGcallsystem</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,800;1,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="page-chamados">
+
+<div class="bg-scene" aria-hidden="true"></div>
+
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <h1 class="logo">
+      PGcallsystem
+      <span class="line" aria-hidden="true"></span>
+    </h1>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="chamados.html" class="sidebar-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Início
+    </a>
+    <a href="chamados.html" class="sidebar-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+      Chamados
+    </a>
+    <a href="clientes.html" class="sidebar-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Clientes
+    </a>
+    <a href="usuarios.html" class="sidebar-link" id="nav-usuarios-sidebar" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>
+      Usuários
+    </a>
+    <a href="pecas.html" class="sidebar-link active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+      Peças
+    </a>
+  </nav>
+  <div class="sidebar-footer" style="margin-top: auto;">
+    <button type="button" class="btn-link link-quiet" id="btn-sair">Sair</button>
+  </div>
+</aside>
+
+<div class="container">
+  <header class="app-header">
+    <button class="menu-toggle" id="menu-toggle" aria-label="Abrir menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <a href="chamados.html" style="text-decoration: none; color: inherit;">
+      <h1 class="logo">
+        PGcallsystem
+        <span class="line" aria-hidden="true"></span>
+      </h1>
+    </a>
+    <div class="app-header-actions">
+      <a href="chamados.html" class="menu-toggle" title="Início">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </a>
+      <span class="user-pill" id="user-pill"></span>
+    </div>
+  </header>
+
+  <div class="chamados-grid">
+    <section class="panel">
+      <h2 class="panel-title">Nova Peça</h2>
+      <label class="field-label" for="nome">Nome do Produto</label>
+      <div class="input-group input-group-fill">
+        <input type="text" id="nome" placeholder="Ex: Tela iPhone 11">
+      </div>
+      <label class="field-label" for="preco">Preço de Custo (R$)</label>
+      <div class="input-group input-group-fill">
+        <input type="number" id="preco" step="0.01" placeholder="0.00">
+      </div>
+      <label class="field-label" for="preco_revenda">Preço de Revenda (R$)</label>
+      <div class="input-group input-group-fill">
+        <input type="number" id="preco_revenda" step="0.01" placeholder="0.00">
+      </div>
+      <label class="field-label" for="estoque">Quantidade em Estoque</label>
+      <div class="input-group input-group-fill">
+        <input type="number" id="estoque" placeholder="0" value="0">
+      </div>
+      <div id="peca-sugestao-venda" style="margin-top: 1rem; font-size: 0.85rem; color: var(--neon); font-weight: 600;"></div>
+      <button type="button" class="btn-primary" id="btn-salvar-peca" style="margin-top: 1rem;">
+        <span class="btn-flare" aria-hidden="true"></span>
+        <span>Salvar Peça</span>
+      </button>
+    </section>
+
+    <section class="panel">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h2 class="panel-title" style="margin: 0;">Lista de Peças</h2>
+        <div class="input-group" style="margin: 0; width: 250px; display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0.75rem;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--text-muted);"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <input type="text" id="search-pecas" placeholder="Buscar peça..." style="border: none; background: transparent; padding: 0.5rem 0; font-size: 0.85rem; width: 100%; color: #fff; outline: none;">
+        </div>
+      </div>
+      <ul id="lista-pecas" class="lista"></ul>
+    </section>
+  </div>
+</div>
+
+<script src="background.js"></script>
+<script src="auth.js"></script>
+<script src="pecas.js"></script>
+</body>
+</html>

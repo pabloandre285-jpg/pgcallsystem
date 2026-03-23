@@ -1,0 +1,927 @@
+﻿requireAuthPage();
+
+const user = getUser();
+const admin = isAdmin();
+
+document.getElementById("user-pill").textContent = user
+  ? `${user.nome || user.username}${admin ? " Â· Admin" : ""}`
+  : "";
+
+if (canAddUser()) {
+  const navUser = document.getElementById("nav-usuarios");
+  if (navUser) navUser.hidden = false;
+  const navUserSidebar = document.getElementById("nav-usuarios-sidebar");
+  if (navUserSidebar) navUserSidebar.hidden = false;
+}
+
+// Rendimento Geral link (Restrito ao Pablo Valentim)
+  const navRendimento = document.getElementById("nav-rendimento");
+  if (navRendimento && (user.nome === "Pablo Valentim" || admin)) {
+    navRendimento.hidden = false;
+  }
+
+// Menu toggle logic
+const menuToggle = document.getElementById("menu-toggle");
+const sidebar = document.getElementById("sidebar");
+const sidebarOverlay = document.getElementById("sidebar-overlay");
+
+if (menuToggle && sidebar && sidebarOverlay) {
+  menuToggle.addEventListener("click", () => {
+    sidebar.classList.add("active");
+    sidebarOverlay.classList.add("active");
+  });
+
+  sidebarOverlay.addEventListener("click", () => {
+    sidebar.classList.remove("active");
+    sidebarOverlay.classList.remove("active");
+  });
+}
+
+// Status tabs logic
+let currentStatusFilter = "todos";
+const statusTabs = document.getElementById("status-tabs");
+if (statusTabs) {
+  statusTabs.addEventListener("click", (e) => {
+    if (e.target.classList.contains("status-tab")) {
+      document.querySelectorAll(".status-tab").forEach(t => t.classList.remove("active"));
+      e.target.classList.add("active");
+      currentStatusFilter = e.target.dataset.status;
+      carregarChamados();
+    }
+  });
+}
+
+document.getElementById("btn-sair")?.addEventListener("click", () => logout());
+document.getElementById("btn-abrir-chamado")?.addEventListener("click", () => criarChamado());
+document.getElementById("modal-fechar")?.addEventListener("click", () => fecharModal());
+document.getElementById("modal-cliente")?.addEventListener("click", (e) => {
+  if (e.target.id === "modal-cliente") fecharModal();
+});
+
+// Modal Detalhe Event Listeners â€” tela cheia
+const modalTicket = document.getElementById("modal-ticket-detalhe");
+if (modalTicket) {
+  document.getElementById("modal-detalhe-fechar").addEventListener("click", () => {
+    modalTicket.hidden = true;
+    document.body.style.overflow = "";
+    if (modalTimerInterval) clearInterval(modalTimerInterval);
+  });
+}
+
+// Modal Novo Chamado logic
+const modalNovo = document.getElementById("modal-novo-chamado");
+const btnNovoModal = document.getElementById("btn-novo-chamado-modal");
+const btnNovoFechar = document.getElementById("modal-novo-fechar");
+
+if (btnNovoModal && modalNovo && btnNovoFechar) {
+  btnNovoModal.addEventListener("click", () => {
+    modalNovo.hidden = false;
+  });
+  btnNovoFechar.addEventListener("click", () => {
+    modalNovo.hidden = true;
+  });
+  modalNovo.addEventListener("click", (e) => {
+    if (e.target.id === "modal-novo-chamado") modalNovo.hidden = true;
+  });
+}
+
+const cannedMessages = {
+  fornecedor: "Prezado cliente, apÃ³s uma anÃ¡lise tÃ©cnica detalhada, identificamos a necessidade de substituiÃ§Ã£o de componentes especÃ­ficos. O pedido das peÃ§as jÃ¡ foi realizado junto ao nosso fornecedor e estamos aguardando a entrega para dar continuidade ao serviÃ§o. Manteremos vocÃª informado sobre qualquer atualizaÃ§Ã£o no prazo de entrega.",
+  usuario: "OlÃ¡, o diagnÃ³stico do seu dispositivo foi concluÃ­do. Estamos agora aguardando a sua aprovaÃ§Ã£o do orÃ§amento/procedimento enviado para prosseguirmos com o reparo. Caso tenha alguma dÃºvida, nossa equipe estÃ¡ Ã  disposiÃ§Ã£o para esclarecimentos.",
+  concluido: "Temos boas notÃ­cias! O serviÃ§o solicitado em seu dispositivo foi concluÃ­do com sucesso e passou por todos os nossos testes de qualidade. O equipamento jÃ¡ estÃ¡ disponÃ­vel para retirada em nossa unidade. Agradecemos a preferÃªncia!"
+};
+
+async function carregarMensagensTecnico() {
+  const select = document.getElementById("detalhe-mensagens-prontas");
+  if (!select) return;
+
+  // Manter as padrÃ£o e adicionar as do tÃ©cnico
+  select.innerHTML = `
+    <option value="">Mensagens RÃ¡pidas...</option>
+    <option value="fornecedor">Aguardando Fornecedor</option>
+    <option value="usuario">Aguardando UsuÃ¡rio/AprovaÃ§Ã£o</option>
+    <option value="concluido">FinalizaÃ§Ã£o de ServiÃ§o</option>
+  `;
+
+  try {
+    const res = await authFetch("/tecnico/mensagens");
+    const msgs = await res.json();
+    if (msgs.length > 0) {
+      const group = document.createElement("optgroup");
+      group.label = "Minhas Mensagens";
+      msgs.forEach(m => {
+        const opt = document.createElement("option");
+        opt.value = "custom_" + m.id;
+        opt.textContent = m.titulo;
+        opt.dataset.msg = m.mensagem;
+        group.appendChild(opt);
+      });
+      select.appendChild(group);
+    }
+  } catch (e) { console.error(e); }
+}
+
+const msgSelect = document.getElementById("detalhe-mensagens-prontas");
+if (msgSelect) {
+  msgSelect.addEventListener("change", () => {
+    const key = msgSelect.value;
+    const notaInput = document.getElementById("detalhe-nota-input");
+    if (!notaInput) return;
+
+    if (key.startsWith("custom_")) {
+      const opt = msgSelect.options[msgSelect.selectedIndex];
+      if (opt) notaInput.value = opt.dataset.msg;
+    } else if (key && cannedMessages[key]) {
+      notaInput.value = cannedMessages[key];
+    }
+    // Reset select to placeholder after picking a message
+    msgSelect.value = "";
+  });
+}
+
+const waChk = document.getElementById("wa_auto");
+if (waChk) {
+  if (localStorage.getItem("pg_wa_auto") === "0") waChk.checked = false;
+  waChk.addEventListener("change", () => {
+    localStorage.setItem("pg_wa_auto", waChk.checked ? "1" : "0");
+  });
+}
+
+function waAutoOpen() {
+  const el = document.getElementById("wa_auto");
+  return el ? el.checked : true;
+}
+
+function openWhatsAppIfAny(url) {
+  if (!url || !waAutoOpen()) return;
+  const w = window.open(url, "_blank", "noopener,noreferrer");
+  if (!w) {
+    window.prompt("Pop-up bloqueado. Copie o link:", url);
+  }
+}
+
+let ticketStatuses = [];
+
+async function carregarMeta() {
+  try {
+    const res = await authFetch("/meta/ticket-statuses");
+    if (res.ok) {
+      ticketStatuses = await res.json();
+    }
+  } catch (e) {
+    console.error("Erro ao carregar meta:", e);
+  }
+}
+
+function labelStatus(value) {
+  const s = ticketStatuses.find((x) => x.value === value);
+  return s ? s.label : value || "â€”";
+}
+
+function badgeClassForStatus(value) {
+  const closed = value === "finalizado" || value === "cancelado";
+  return closed ? "badge badge-fechado" : "badge badge-aberto";
+}
+
+async function carregarClientesSelect() {
+  try {
+    const res = await authFetch("/clientes");
+    if (!res.ok) return;
+    const list = await res.json();
+    const sel = document.getElementById("cliente_id");
+    if (!sel) return;
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">Selecione o cliente</option>';
+    list.forEach((c) => {
+      const o = document.createElement("option");
+      o.value = String(c.id);
+      o.textContent = c.nome_completo;
+      sel.appendChild(o);
+    });
+    if (cur && [...sel.options].some((o) => o.value === cur)) sel.value = cur;
+  } catch (e) { console.error(e); }
+}
+
+async function criarChamado() {
+  const titulo = document.getElementById("titulo").value.trim();
+  const descricao = document.getElementById("descricao").value.trim();
+  const cliente_id = document.getElementById("cliente_id").value;
+  const prioridade = document.getElementById("prioridade").value;
+
+  if (!titulo) {
+    alert("Informe o tÃ­tulo.");
+    return;
+  }
+  if (!cliente_id) {
+    alert("Selecione o cliente.");
+    return;
+  }
+
+  const res = await authFetch("/tickets", {
+    method: "POST",
+    body: JSON.stringify({ titulo, descricao, cliente_id: parseInt(cliente_id, 10), prioridade })
+  });
+
+  if (!res.ok) {
+    const t = await res.json().catch(() => ({}));
+    alert(t.message || "Erro ao abrir chamado.");
+    return;
+  }
+
+  const data = await res.json().catch(() => ({}));
+  document.getElementById("titulo").value = "";
+  document.getElementById("descricao").value = "";
+  await carregarChamados();
+  if (data.whatsapp_url) openWhatsAppIfAny(data.whatsapp_url);
+  else if (waAutoOpen()) alert("Cliente sem celular â€” sem link WhatsApp.");
+  
+  const modal = document.getElementById("modal-novo-chamado");
+  if (modal) modal.hidden = true;
+}
+
+function escapeHtml(s) {
+  const div = document.createElement("div");
+  div.textContent = s == null ? "" : String(s);
+  return div.innerHTML;
+}
+
+function abrirModalCliente(ticket) {
+  const body = document.getElementById("modal-cliente-body");
+  if (!ticket.cliente_id) {
+    body.innerHTML = "<p>Sem cliente.</p>";
+  } else {
+    const tel = String(ticket.cliente_celular || "").replace(/\D/g, "");
+    body.innerHTML = `
+      <p><strong>Nome:</strong> ${escapeHtml(ticket.cliente_nome)}</p>
+      <p><strong>Celular:</strong> <a href="tel:${escapeHtml(tel)}">${escapeHtml(ticket.cliente_celular || "â€”")}</a></p>
+      <p><strong>CPF:</strong> ${escapeHtml(ticket.cliente_cpf || "â€”")}</p>
+      <p><strong>Nascimento:</strong> ${escapeHtml(ticket.cliente_data_nascimento || "â€”")}</p>
+      <p><strong>CEP:</strong> ${escapeHtml(ticket.cliente_cep || "â€”")}</p>
+      <p><strong>EndereÃ§o:</strong> ${escapeHtml(ticket.cliente_endereco || "â€”")}</p>
+    `;
+  }
+  document.getElementById("modal-cliente").hidden = false;
+}
+
+function fecharModal() {
+  document.getElementById("modal-cliente").hidden = true;
+}
+
+async function atualizarStatusTicket(id, status, valor_total = 0) {
+  const res = await authFetch(`/tickets/${id}`, {
+    method: "PUT",
+    body: JSON.stringify({ status, valor_total })
+  });
+  if (!res.ok) {
+    const t = await res.json().catch(() => ({}));
+    alert(t.message || "Erro ao atualizar status.");
+    return;
+  }
+  const data = await res.json().catch(() => ({}));
+  await carregarChamados();
+  if (data.whatsapp_url) openWhatsAppIfAny(data.whatsapp_url);
+}
+
+function formatTimer(ms) {
+  // Garante que o tempo nunca seja negativo
+  const safeMs = Math.max(0, ms || 0);
+  const minutes = Math.floor((safeMs / (1000 * 60)) % 60);
+  const hours = Math.floor((safeMs / (1000 * 60 * 60)) % 24);
+  const totalDays = Math.floor(safeMs / (1000 * 60 * 60 * 24));
+
+  const h = String(hours).padStart(2, '0');
+  const m = String(minutes).padStart(2, '0');
+  
+  return `Dia ${totalDays}  ${h}:${m}`;
+}
+
+function getTimerEmoji(ms) {
+  if (!ms) return "ðŸ˜Š";
+  const oneWeek = 1000 * 60 * 60 * 24 * 7;
+  const oneMonth = 1000 * 60 * 60 * 24 * 30;
+  
+  if (ms > oneMonth) return "ðŸ˜¡";
+  if (ms > oneWeek) return "ðŸ˜¢";
+  return "ðŸ˜Š";
+}
+
+// Professional Toast System
+function showToast(message, type = "success") {
+  let container = document.querySelector(".toast-container");
+  if (!container) {
+    container = document.createElement("div");
+    container.className = "toast-container";
+    document.body.appendChild(container);
+  }
+  const toast = document.createElement("div");
+  toast.className = `toast ${type}`;
+  toast.innerHTML = `
+    <span style="flex: 1;">${message}</span>
+    <button type="button" class="btn-link link-quiet" style="font-size: 1.2rem;">&times;</button>
+  `;
+  toast.querySelector("button").onclick = () => toast.remove();
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 5000);
+}
+
+// Override alerts with toasts
+window.alert = (msg) => showToast(msg, "info");
+
+async function copyToClipboard(text, msg = "Copiado para a Ã¡rea de transferÃªncia!") {
+  try {
+    await navigator.clipboard.writeText(text);
+    showToast(msg);
+  } catch (err) {
+    console.error("Erro ao copiar:", err);
+  }
+}
+
+function formatTimerBeauty(ms) {
+  const safeMs = Math.max(0, ms || 0);
+  const minutes = Math.floor((safeMs / (1000 * 60)) % 60);
+  const hours = Math.floor((safeMs / (1000 * 60 * 60)) % 24);
+  const totalDays = Math.floor(safeMs / (1000 * 60 * 60 * 24));
+
+  const h = String(hours).padStart(2, '0');
+  const m = String(minutes).padStart(2, '0');
+  
+  let html = `
+    <div class="timer-pro-digits">
+      <span class="timer-day-val">Dia ${totalDays}</span>
+      <span class="timer-time-val">${h}:${m}</span>
+    </div>
+  `;
+  return html;
+}
+
+async function carregarChamados() {
+  const res = await authFetch("/tickets");
+  const allTickets = await res.json();
+  let chamados = [...allTickets];
+  const lista = document.getElementById("lista");
+  lista.innerHTML = "";
+
+  // Dashboard Summary Logic
+  const ativos = allTickets.filter(t => ['em_atendimento', 'aprovado'].includes(t.status)).length;
+  const pendentes = allTickets.filter(t => ['pendente_usuario', 'pendente_aprovacao'].includes(t.status)).length;
+  const fornecedor = allTickets.filter(t => t.status === 'pendente_fornecedor').length;
+  
+  document.getElementById("summary-ativos").textContent = ativos;
+  document.getElementById("summary-pendentes").textContent = pendentes;
+  document.getElementById("summary-fornecedor").textContent = fornecedor;
+
+  if (admin || user.nome === "Pablo Valentim") {
+    const cardFat = document.getElementById("card-faturamento-hoje");
+    if (cardFat) {
+      cardFat.hidden = false;
+      const hoje = new Date().toISOString().slice(0, 10);
+      const fatHoje = allTickets
+        .filter(t => t.status === 'concluido' && t.concluido_em && t.concluido_em.startsWith(hoje))
+        .reduce((acc, curr) => acc + (curr.valor_total || 0), 0);
+      document.getElementById("summary-faturamento").textContent = `R$ ${fatHoje.toFixed(2)}`;
+    }
+  }
+
+  // Search Logic
+  const searchInput = document.getElementById("search-tickets");
+  const filterBySearch = (list) => {
+    const term = searchInput.value.toLowerCase().replace('#', '').trim();
+    if (!term) return list;
+    return list.filter(t => 
+      (t.cliente_nome || "").toLowerCase().includes(term) ||
+      (t.titulo || "").toLowerCase().includes(term) ||
+      String(t.id).includes(term)
+    );
+  };
+
+  searchInput.oninput = () => carregarChamados(); // Re-render on search
+
+  // Atualizar nome da aba do tÃ©cnico
+  const tabTecnico = document.getElementById("tab-tecnico-nome");
+  if (tabTecnico) {
+    const nomeExibicao = user.nome ? user.nome.split(' ')[0].toUpperCase() : user.username.toUpperCase();
+    tabTecnico.innerHTML = `${nomeExibicao} <span class="badge-count" id="count-meus-chamados">0</span>`;
+  }
+
+  // Filtrar por aba
+  if (currentStatusFilter !== "todos") {
+    if (currentStatusFilter === "meus_chamados") {
+      chamados = chamados.filter(c => c.tecnico_id === user.id);
+    } else {
+      chamados = chamados.filter(c => c.status === currentStatusFilter);
+    }
+  }
+
+  // Aplicar busca
+  chamados = filterBySearch(chamados);
+
+  // Atualizar contadores
+  atualizarContadores(allTickets);
+
+  if (!chamados.length) {
+    lista.innerHTML = `<li class="empty-state">${currentStatusFilter === "todos" ? "Nenhum chamado." : "Nenhum chamado com este status."}</li>`;
+    return;
+  }
+
+  chamados.forEach((c) => {
+    const st = c.status || "";
+    const card = document.createElement("li");
+    card.className = "ticket-card";
+    
+    // Calcula tempo real se o timer estiver rodando
+    let tempoTotal = c.tempo_tecnico_ms || 0;
+    if (c.timer_inicio) {
+      tempoTotal += (new Date() - new Date(c.timer_inicio));
+    }
+
+    card.innerHTML = `
+      <div class="priority-badge priority-${c.prioridade}">${c.prioridade}</div>
+      <div class="ticket-num">#${escapeHtml(String(c.id))}</div>
+      <div class="ticket-client">${escapeHtml(c.cliente_nome || "â€”")}</div>
+      <div class="ticket-title">${escapeHtml(c.titulo)}</div>
+      <div class="ticket-desc-short">${escapeHtml(c.descricao || "")}</div>
+      <div class="ticket-technician" style="margin-top: 0.5rem;">${c.tecnico_nome ? `TÃ©cnico: ${escapeHtml(c.tecnico_nome)}` : "Aguardando Agente"}</div>
+      <div class="ticket-status">
+        <span class="${badgeClassForStatus(st)}">${escapeHtml(labelStatus(st))}</span>
+      </div>
+      <div class="ticket-timer">
+        <span class="timer-emoji">${getTimerEmoji(tempoTotal)}</span>
+        <span>Tempo Ativo: ${formatTimer(tempoTotal)}</span>
+      </div>
+    `;
+    card.addEventListener("click", () => abrirModalTicket(c));
+    lista.appendChild(card);
+  });
+}
+
+let modalTimerInterval = null;
+let currentPiecesList = [];
+
+// Signature Pad Logic
+let isSigning = false;
+let sigCanvas, sigCtx;
+
+function initSignaturePad() {
+  sigCanvas = document.getElementById('signature-pad');
+  if (!sigCanvas) return;
+  sigCtx = sigCanvas.getContext('2d');
+  
+  // Ajustar tamanho real do canvas
+  sigCanvas.width = sigCanvas.offsetWidth;
+  sigCanvas.height = sigCanvas.offsetHeight;
+
+  sigCtx.strokeStyle = "#000";
+  sigCtx.lineWidth = 2;
+  sigCtx.lineJoin = "round";
+  sigCtx.lineCap = "round";
+
+  const getPos = (e) => {
+    const rect = sigCanvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return { x: clientX - rect.left, y: clientY - rect.top };
+  };
+
+  const start = (e) => {
+    isSigning = true;
+    const { x, y } = getPos(e);
+    sigCtx.beginPath();
+    sigCtx.moveTo(x, y);
+    if (e.cancelable) e.preventDefault();
+  };
+
+  const move = (e) => {
+    if (!isSigning) return;
+    const { x, y } = getPos(e);
+    sigCtx.lineTo(x, y);
+    sigCtx.stroke();
+    if (e.cancelable) e.preventDefault();
+  };
+
+  const stop = () => {
+    isSigning = false;
+  };
+
+  sigCanvas.onmousedown = start;
+  sigCanvas.onmousemove = move;
+  window.onmouseup = stop;
+
+  sigCanvas.ontouchstart = start;
+  sigCanvas.ontouchmove = move;
+  sigCanvas.ontouchend = stop;
+
+  document.getElementById('btn-limpar-assinatura').onclick = () => {
+    sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+  };
+}
+
+async function abrirModalTicket(ticket) {
+  const modal = document.getElementById("modal-ticket-detalhe");
+  if (!modal) return;
+
+  modal.hidden = false;
+  document.body.style.overflow = "hidden";
+
+  // Header
+  document.getElementById("detalhe-titulo").textContent = `#${ticket.id}`;
+  document.getElementById("detalhe-cliente-header").textContent = ticket.cliente_nome || "Cliente nÃ£o informado";
+  document.getElementById("detalhe-status-label").textContent = labelStatus(ticket.status);
+
+  // Timer no header
+  const headerTimer = document.getElementById("detalhe-header-timer");
+  if (modalTimerInterval) clearInterval(modalTimerInterval);
+
+  const updateHeaderTimer = () => {
+    let tempoTotal = ticket.tempo_tecnico_ms || 0;
+    const isRunning = !!ticket.timer_inicio;
+    if (isRunning) tempoTotal += (new Date() - new Date(ticket.timer_inicio));
+    headerTimer.innerHTML = `
+      <div class="timer-pro-dashboard ${isRunning ? "timer-running" : ""}">
+        <div class="timer-pro-main">
+          <span class="timer-pro-label">${isRunning ? "Em ExecuÃ§Ã£o" : "Em Pausa"}</span>
+          ${formatTimerBeauty(tempoTotal)}
+        </div>
+        <div class="timer-pro-status">
+          <div class="timer-pro-emoji-wrapper">${getTimerEmoji(tempoTotal)}</div>
+        </div>
+      </div>`;
+  };
+  updateHeaderTimer();
+  modalTimerInterval = setInterval(updateHeaderTimer, 1000);
+
+  // Card do cliente
+  const renderExtra = (label, value) => {
+    if (!value || value === "â€”" || value === "") return "";
+    return `<p style="margin:0 0 0.4rem;font-size:0.88rem;"><span style="color:var(--text-muted);font-size:0.7rem;text-transform:uppercase;letter-spacing:.08em;">${label}</span><br><span style="color:#fff;">${escapeHtml(value)}</span></p>`;
+  };
+  document.getElementById("detalhe-cliente-nome").innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:0.5rem;">
+      <span style="font-size:1.15rem;font-weight:800;color:#fff;">${escapeHtml(ticket.cliente_nome || "â€”")}</span>
+      <div id="cliente-detalhes-extras" style="display:none;margin-top:0.25rem;display:grid;grid-template-columns:1fr 1fr;gap:0.5rem 1.5rem;">
+        ${renderExtra("Celular", ticket.cliente_celular)}
+        ${renderExtra("CPF", ticket.cliente_cpf)}
+        ${renderExtra("CEP", ticket.cliente_cep)}
+        ${renderExtra("EndereÃ§o", ticket.cliente_endereco)}
+      </div>
+      <button type="button" class="toggle-details-btn" id="btn-toggle-cliente">Exibir detalhes do cliente</button>
+    </div>`;
+  const btnToggle = document.getElementById("btn-toggle-cliente");
+  const extras = document.getElementById("cliente-detalhes-extras");
+  if (btnToggle && extras) {
+    extras.style.display = "none";
+    btnToggle.onclick = () => {
+      const hidden = extras.style.display === "none";
+      extras.style.display = hidden ? "grid" : "none";
+      btnToggle.textContent = hidden ? "Ocultar detalhes" : "Exibir detalhes do cliente";
+    };
+  }
+
+  // Foto do defeito
+  const fotoCont = document.getElementById("detalhe-foto-container");
+  const fotoImg = document.getElementById("detalhe-foto-img");
+  if (ticket.foto_defeito) {
+    fotoCont.style.display = "block";
+    fotoImg.src = ticket.foto_defeito;
+    fotoImg.onclick = () => window.open(ticket.foto_defeito, "_blank");
+  } else {
+    fotoCont.style.display = "none";
+  }
+
+  // Assinatura
+  const sigWrap = document.getElementById("detalhe-assinatura-wrap");
+  const sigDisplay = document.getElementById("assinatura-display");
+  const sigSalva = document.getElementById("img-assinatura-salva");
+  const sigCanvasWrap = document.getElementById("assinatura-canvas-wrap");
+  if (ticket.status === "concluido" || ticket.assinatura_digital) {
+    sigWrap.style.display = "block";
+    if (ticket.assinatura_digital) {
+      sigDisplay.style.display = "block";
+      sigSalva.src = ticket.assinatura_digital;
+      sigCanvasWrap.style.display = "none";
+    } else {
+      sigDisplay.style.display = "none";
+      sigCanvasWrap.style.display = "block";
+      setTimeout(initSignaturePad, 100);
+    }
+  } else {
+    sigWrap.style.display = "none";
+  }
+
+  // Agente / TÃ©cnico
+  const agenteBox = document.getElementById("detalhe-agente-box");
+  if (ticket.tecnico_id) {
+    agenteBox.innerHTML = `<span style="font-size:0.8rem;color:var(--neon);font-weight:700;background:var(--neon-dim);padding:0.3rem 0.75rem;border-radius:20px;border:1px solid var(--neon-soft);">TÃ‰CNICO: ${escapeHtml(ticket.tecnico_nome || "AtribuÃ­do")}</span>`;
+  } else {
+    agenteBox.innerHTML = `<button type="button" class="btn-info" id="btn-ser-agente" style="padding:0.5rem 1.1rem;font-size:0.8rem;">Atender Chamado</button>`;
+    document.getElementById("btn-ser-agente").onclick = async () => {
+      try {
+        const res = await authFetch(`/tickets/${ticket.id}/take`, { method: "POST" });
+        const resData = await res.json().catch(() => ({}));
+        if (res.ok) {
+          ticket.tecnico_id = user.id;
+          ticket.tecnico_nome = resData.tecnico_nome;
+          ticket.timer_inicio = new Date().toISOString();
+          abrirModalTicket(ticket);
+          carregarChamados();
+        } else {
+          alert(resData.message || "Erro ao assumir chamado.");
+        }
+      } catch { alert("Erro de conexÃ£o."); }
+    };
+  }
+
+  // Reset nota
+  document.getElementById("detalhe-nota-input").value = "";
+
+  // Status edit
+  const stWrap = document.getElementById("detalhe-status-edit-wrap");
+  const stSel = document.getElementById("detalhe-status-select");
+  if (admin || ticket.tecnico_id === user.id) {
+    stWrap.hidden = false;
+    stSel.innerHTML = ticketStatuses.map(s =>
+      `<option value="${s.value}" ${s.value === ticket.status ? "selected" : ""}>${s.label}</option>`
+    ).join("");
+    const existingExtra = stWrap.querySelector(".extra-field");
+    if (existingExtra) existingExtra.remove();
+    stSel.onchange = async () => {
+      let valor = ticket.valor_total;
+      let assinatura = null;
+      if (stSel.value === "concluido") {
+        const promptValor = prompt("Informe o valor total do serviÃ§o:", ticket.valor_total || "0");
+        if (promptValor === null) { stSel.value = ticket.status; return; }
+        valor = parseFloat(promptValor) || 0;
+        if (sigCanvas && sigCanvasWrap.style.display !== "none") assinatura = sigCanvas.toDataURL();
+      }
+      const res = await authFetch(`/tickets/${ticket.id}`, {
+        method: "PUT",
+        body: JSON.stringify({ status: stSel.value, valor_total: valor, assinatura_digital: assinatura })
+      });
+      if (res.ok) {
+        ticket.status = stSel.value;
+        ticket.valor_total = valor;
+        document.getElementById("detalhe-status-label").textContent = labelStatus(ticket.status);
+        showToast("Status atualizado!");
+        carregarChamados();
+      }
+    };
+  } else {
+    stWrap.hidden = true;
+  }
+
+  // â”€â”€ Dropdown de PendÃªncias â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  const pendingMsgs = {
+    pendente_fornecedor: "ATUALIZAÃ‡ÃƒO â€” AGUARDANDO FORNECEDOR\n\nApÃ³s anÃ¡lise tÃ©cnica detalhada do equipamento, identificamos a necessidade de substituiÃ§Ã£o de componentes especÃ­ficos. O pedido de aquisiÃ§Ã£o das peÃ§as jÃ¡ foi formalizado junto ao nosso fornecedor credenciado e aguardamos a confirmaÃ§Ã£o de entrega para dar continuidade ao reparo.\n\nAssim que as peÃ§as chegarem, daremos inÃ­cio imediato ao serviÃ§o e manteremos vocÃª informado sobre qualquer atualizaÃ§Ã£o no prazo.",
+    pendente_usuario:   "AGUARDANDO APROVAÃ‡ÃƒO DO CLIENTE\n\nO diagnÃ³stico tÃ©cnico do seu equipamento foi concluÃ­do com sucesso. O orÃ§amento detalhado com os serviÃ§os necessÃ¡rios e os respectivos valores jÃ¡ estÃ¡ disponÃ­vel para sua anÃ¡lise.\n\nPara que possamos dar inÃ­cio ao reparo com a mÃ¡xima agilidade, solicitamos gentilmente a sua aprovaÃ§Ã£o. Em caso de dÃºvidas, nossa equipe estÃ¡ Ã  disposiÃ§Ã£o para esclarecimentos.",
+    pendente_aprovacao: "AGUARDANDO APROVAÃ‡ÃƒO INTERNA\n\nO chamado foi analisado e encaminhado para aprovaÃ§Ã£o da gestÃ£o antes de prosseguirmos com a execuÃ§Ã£o do serviÃ§o. Assim que a autorizaÃ§Ã£o for concedida, o atendimento serÃ¡ retomado imediatamente.\n\nAgradecemos a compreensÃ£o.",
+    aprovado:           "SERVIÃ‡O APROVADO â€” INICIANDO EXECUÃ‡ÃƒO\n\nInformamos que o serviÃ§o foi devidamente aprovado e nossa equipe tÃ©cnica jÃ¡ estÃ¡ dando inÃ­cio aos procedimentos de reparo. Trabalharemos com mÃ¡xima atenÃ§Ã£o e qualidade para concluir o atendimento no menor tempo possÃ­vel.\n\nManteremos vocÃª atualizado sobre o andamento.",
+    concluido:          "SERVIÃ‡O CONCLUÃDO COM SUCESSO\n\nTemos o prazer de informar que o reparo do seu equipamento foi finalizado. O dispositivo passou por todos os nossos testes de controle de qualidade e estÃ¡ disponÃ­vel para retirada em nossa unidade.\n\nAgradecemos a confianÃ§a em nossos serviÃ§os. Qualquer dÃºvida, estamos Ã  disposiÃ§Ã£o.",
+    cancelado:          "CHAMADO ENCERRADO\n\nInformamos que este chamado foi encerrado sem a execuÃ§Ã£o do serviÃ§o. Caso necessite de suporte ou queira reabrir o atendimento, entre em contato com nossa equipe.\n\nAgradecemos o contato."
+  };
+
+  const btnQuickEl = document.getElementById("btn-quick-msgs");
+  const popoverEl = document.getElementById("quick-msgs-popover");
+
+  if (btnQuickEl && popoverEl) {
+    popoverEl.hidden = true;
+    btnQuickEl.classList.remove("open");
+
+    // Clonar para remover listeners antigos
+    const newBtn = btnQuickEl.cloneNode(true);
+    btnQuickEl.parentNode.replaceChild(newBtn, btnQuickEl);
+    const freshPopover = document.getElementById("quick-msgs-popover");
+
+    newBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isHidden = freshPopover.hidden;
+      freshPopover.hidden = !isHidden;
+      newBtn.classList.toggle("open", isHidden);
+    });
+
+    const closeDropdown = () => {
+      freshPopover.hidden = true;
+      newBtn.classList.remove("open");
+    };
+    document.addEventListener("click", closeDropdown);
+    freshPopover.addEventListener("click", (e) => e.stopPropagation());
+
+    freshPopover.querySelectorAll(".tfs-pending-item").forEach(item => {
+      item.onclick = async (ev) => {
+        ev.stopPropagation();
+        const status = item.dataset.status;
+        const content = pendingMsgs[status] || "";
+
+        document.getElementById("detalhe-nota-input").value = content;
+        closeDropdown();
+
+        let valor = ticket.valor_total;
+        if (status === "concluido") {
+          const promptValor = prompt("Informe o valor total do serviÃ§o:", ticket.valor_total || "0");
+          if (promptValor === null) return;
+          valor = parseFloat(promptValor) || 0;
+        }
+
+        const resNote = await authFetch(`/tickets/${ticket.id}/notes`, {
+          method: "POST",
+          body: JSON.stringify({ content })
+        });
+        if (!resNote.ok) { alert("Erro ao salvar nota."); return; }
+
+        const resStatus = await authFetch(`/tickets/${ticket.id}`, {
+          method: "PUT",
+          body: JSON.stringify({ status, valor_total: valor })
+        });
+        if (resStatus.ok) {
+          ticket.status = status;
+          ticket.valor_total = valor;
+          document.getElementById("detalhe-status-label").textContent = labelStatus(status);
+          document.getElementById("detalhe-nota-input").value = "";
+          showToast(`Nota adicionada e status alterado para "${labelStatus(status)}"`, "success");
+          carregarNotasDetalhe(ticket.id);
+          carregarChamados();
+          const sel = document.getElementById("detalhe-status-select");
+          if (sel) sel.value = status;
+        }
+      };
+    });
+  }
+
+  // BotÃ£o Adicionar Nota
+  const btnAddNota = document.getElementById("btn-add-nota-detalhe");
+  btnAddNota.onclick = async () => {
+    const content = document.getElementById("detalhe-nota-input").value.trim();
+    if (!content) return;
+    const res = await authFetch(`/tickets/${ticket.id}/notes`, {
+      method: "POST",
+      body: JSON.stringify({ content })
+    });
+    if (res.ok) {
+      document.getElementById("detalhe-nota-input").value = "";
+      carregarNotasDetalhe(ticket.id);
+    }
+  };
+
+  // BotÃ£o Adicionar PeÃ§a
+  const btnAddPeca = document.getElementById("btn-add-peca-detalhe");
+  if (btnAddPeca) {
+    btnAddPeca.onclick = async () => {
+      const pecaId = document.getElementById("detalhe-peca-select").value;
+      if (!pecaId) return;
+      const pecaSelecionada = currentPiecesList.find(p => String(p.id) === String(pecaId));
+      const preco_venda_padrao = pecaSelecionada ? pecaSelecionada.preco_revenda : 0;
+      const promptMsg = preco_venda_padrao > 0
+        ? "Confirme ou altere o PREÃ‡O DE VENDA para este chamado:"
+        : "Esta peÃ§a nÃ£o tem preÃ§o definido. Informe o PREÃ‡O DE VENDA:";
+      const vendaStr = prompt(promptMsg, preco_venda_padrao > 0 ? preco_venda_padrao.toFixed(2) : "");
+      if (vendaStr === null) return;
+      const preco_venda = parseFloat(vendaStr) || preco_venda_padrao;
+      const res = await authFetch(`/tickets/${ticket.id}/pecas`, {
+        method: "POST",
+        body: JSON.stringify({ peca_id: parseInt(pecaId, 10), preco_venda })
+      });
+      if (res.ok) carregarPecasDetalhe(ticket.id);
+    };
+  }
+
+  // BotÃ£o Imprimir O.S.
+  const btnImprimirOS = document.getElementById("btn-imprimir-os");
+  if (btnImprimirOS) {
+    btnImprimirOS.onclick = () => {
+      const printWindow = window.open("", "_blank");
+      const notasHtml = document.getElementById("detalhe-notas-lista").innerHTML;
+      const pecasHtml = document.getElementById("detalhe-pecas-lista").innerHTML;
+      const assinaturaImg = ticket.assinatura_digital
+        ? `<img src="${ticket.assinatura_digital}" style="max-width:250px;">`
+        : '<div style="height:60px;border-bottom:1px solid #000;width:250px;margin:0 auto;"></div>';
+      printWindow.document.write(`
+        <html><head><title>O.S. #${ticket.id}</title>
+        <style>body{font-family:sans-serif;padding:40px;color:#1a1a1a;}h2{margin-bottom:4px;}p{margin:4px 0;font-size:13px;}.section{margin-top:20px;border-top:1px solid #ccc;padding-top:10px;}</style>
+        </head><body>
+        <h2>ORDEM DE SERVIÃ‡O #${ticket.id}</h2>
+        <p><strong>Cliente:</strong> ${escapeHtml(ticket.cliente_nome || "â€”")}</p>
+        <p><strong>Status:</strong> ${escapeHtml(labelStatus(ticket.status))}</p>
+        <p><strong>TÃ­tulo:</strong> ${escapeHtml(ticket.titulo || "â€”")}</p>
+        <div class="section"><strong>Notas:</strong>${notasHtml}</div>
+        <div class="section"><strong>PeÃ§as:</strong>${pecasHtml}</div>
+        <div class="section" style="text-align:center;"><strong>Assinatura:</strong><br>${assinaturaImg}</div>
+        </body></html>`);
+      printWindow.document.close();
+      printWindow.print();
+    };
+  }
+
+  // Carregar dados
+  carregarNotasDetalhe(ticket.id);
+  carregarPecasDetalhe(ticket.id);
+}
+
+async function carregarNotasDetalhe(ticketId) {
+  const container = document.getElementById("detalhe-notas-lista");
+  container.innerHTML = "Carregando notas...";
+  const res = await authFetch(`/tickets/${ticketId}/notes`);
+  const notes = await res.json();
+  container.innerHTML = notes.length ? "" : "Nenhuma nota.";
+  notes.forEach(n => {
+    const div = document.createElement("div");
+    div.className = "note-bubble";
+    div.innerHTML = `
+      <div class="note-meta">
+        <strong>${escapeHtml(n.user_name)}</strong>
+        <span>${new Date(n.created_at).toLocaleString()}</span>
+      </div>
+      <div>${escapeHtml(n.content)}</div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+async function carregarPecasDetalhe(ticketId) {
+  const container = document.getElementById("detalhe-pecas-lista");
+  const select = document.getElementById("detalhe-peca-select");
+  container.innerHTML = "Carregando peÃ§as...";
+
+  try {
+    // Select piece list
+    const resPecas = await authFetch("/pecas");
+    const allPecas = await resPecas.json();
+    currentPiecesList = allPecas; // Armazenar globalmente para o btnAddPeca usar
+    
+    select.innerHTML = '<option value="">Adicionar peÃ§a...</option>';
+    allPecas.forEach(p => {
+      const opt = document.createElement("option");
+      opt.value = p.id;
+      opt.textContent = p.nome;
+      select.appendChild(opt);
+    });
+
+    // Ticket piece list
+    const res = await authFetch(`/tickets/${ticketId}/pecas`);
+    const pecas = await res.json();
+    container.innerHTML = pecas.length ? "" : "Nenhuma peÃ§a vinculada.";
+    pecas.forEach(p => {
+      const div = document.createElement("div");
+      div.className = "peca-item";
+      
+      // O preco_venda que estÃ¡ na tabela ticket_pecas Ã© o que foi salvo no momento da inclusÃ£o
+      const vOriginal = p.preco_venda_original || 0;
+      const vSalvo = p.preco_venda || 0;
+
+      div.innerHTML = `
+        <div style="display: flex; flex-direction: column;">
+          <span style="font-weight: 600;">${escapeHtml(p.nome)} (x${p.quantidade})</span>
+          <span style="font-size: 0.75rem; color: var(--text-muted);">Custo: R$ ${p.preco_custo || 0}</span>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: flex-end;">
+          <span class="peca-price">Venda: R$ ${escapeHtml(String(vSalvo.toFixed(2)))}</span>
+          <span style="font-size: 0.7rem; color: var(--neon-soft);">Lucro: R$ ${(vSalvo - (p.preco_custo || 0)).toFixed(2)}</span>
+        </div>
+      `;
+      container.appendChild(div);
+    });
+  } catch (e) {
+    console.error(e);
+    container.innerHTML = "Erro ao carregar peÃ§as.";
+  }
+}
+
+function atualizarContadores(chamados) {
+  const counts = {
+    todos: 0,
+    meus_chamados: 0,
+    pendente_fornecedor: 0,
+    pendente_usuario: 0,
+    pendente_aprovacao: 0,
+    aprovado: 0,
+    concluido: 0
+  };
+
+  chamados.forEach(c => {
+    // Contador global da aba do tÃ©cnico
+    if (user && c.tecnico_id === user.id) {
+      counts.meus_chamados++;
+    }
+
+    // Para tÃ©cnicos comuns, nas outras abas mostramos apenas o que estÃ¡ atribuÃ­do a eles (exceto se o chamado estiver sem tÃ©cnico)
+    if (admin || (user && user.nome === "Pablo Valentim") || !c.tecnico_id || (user && c.tecnico_id === user.id)) {
+      counts.todos++;
+      if (counts[c.status] !== undefined) counts[c.status]++;
+    }
+  });
+
+  document.getElementById("count-todos").textContent = counts.todos;
+  if (document.getElementById("count-meus-chamados")) {
+    document.getElementById("count-meus-chamados").textContent = counts.meus_chamados;
+  }
+  document.getElementById("count-fornecedor").textContent = counts.pendente_fornecedor;
+  document.getElementById("count-usuario").textContent = counts.pendente_usuario;
+  document.getElementById("count-aprovacao").textContent = counts.pendente_aprovacao;
+  document.getElementById("count-aprovado").textContent = counts.aprovado;
+  document.getElementById("count-concluido").textContent = counts.concluido;
+}
+
+(async () => {
+  await carregarMeta();
+  await carregarClientesSelect();
+  await carregarChamados();
+  await carregarMensagensTecnico();
+})();
+

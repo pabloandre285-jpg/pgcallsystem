@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chamados — PGcallsystem</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,800;1,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="page-chamados">
+
+<div class="bg-scene" aria-hidden="true">
+  <canvas id="hacker-canvas"></canvas>
+</div>
+
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <a href="chamados.html" class="pg-logo-link">
+      <span class="pg-logo">PG</span>
+    </a>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="chamados.html" class="sidebar-link active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Início
+    </a>
+    <a href="chamados.html" class="sidebar-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+      Chamados
+    </a>
+    <a href="rendimento.html" class="sidebar-link" id="nav-rendimento" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
+      Rendimento Geral
+    </a>
+    <a href="clientes.html" class="sidebar-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Clientes
+    </a>
+    <a href="usuarios.html" class="sidebar-link" id="nav-usuarios-sidebar" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>
+      Usuários
+    </a>
+    <a href="pecas.html" class="sidebar-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+      Peças
+    </a>
+  </nav>
+  <div class="sidebar-footer" style="margin-top: auto;">
+    <button type="button" class="btn-link link-quiet" id="btn-sair">Sair</button>
+  </div>
+</aside>
+
+<div class="container">
+  <header class="app-header">
+    <button class="menu-toggle" id="menu-toggle" aria-label="Abrir menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <a href="chamados.html" style="text-decoration: none; color: inherit;">
+      <h1 class="logo">
+        PGcallsystem
+        <span class="line" aria-hidden="true"></span>
+      </h1>
+    </a>
+    <div class="app-header-actions">
+      <a href="chamados.html" class="menu-toggle" title="Início">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </a>
+      <span class="user-pill" id="user-pill"></span>
+    </div>
+  </header>
+
+  <div class="status-tabs-container" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; gap: 1rem;">
+    <div class="status-tabs" id="status-tabs" style="margin-bottom: 0; flex: 1;">
+      <div class="status-tab active" data-status="todos">Todos <span class="badge-count" id="count-todos">0</span></div>
+      <div class="status-tab" data-status="meus_chamados" id="tab-tecnico-nome">Meus Chamados <span class="badge-count" id="count-meus-chamados">0</span></div>
+      <div class="status-tab" data-status="pendente_fornecedor">Fornecedor <span class="badge-count" id="count-fornecedor">0</span></div>
+      <div class="status-tab" data-status="pendente_usuario">Usuário <span class="badge-count" id="count-usuario">0</span></div>
+      <div class="status-tab" data-status="pendente_aprovacao">Aprovação <span class="badge-count" id="count-aprovacao">0</span></div>
+      <div class="status-tab" data-status="aprovado">Aprovado <span class="badge-count" id="count-aprovado">0</span></div>
+      <div class="status-tab" data-status="concluido">Concluído <span class="badge-count" id="count-concluido">0</span></div>
+    </div>
+    <button type="button" class="btn-primary" id="btn-novo-chamado-modal" style="width: auto; padding: 0.8rem 1.5rem;">
+      <span class="btn-flare" aria-hidden="true"></span>
+      <span>Novo Chamado</span>
+    </button>
+  </div>
+
+  <!-- Dashboard Resumo -->
+  <div class="dashboard-summary" id="dashboard-resumo">
+    <div class="summary-card">
+      <span class="summary-label">Total Ativos</span>
+      <span class="summary-value" id="summary-ativos">0</span>
+    </div>
+    <div class="summary-card">
+      <span class="summary-label">Pendentes</span>
+      <span class="summary-value" id="summary-pendentes">0</span>
+    </div>
+    <div class="summary-card">
+      <span class="summary-label">Aguardando Fornecedor</span>
+      <span class="summary-value" id="summary-fornecedor">0</span>
+    </div>
+    <div class="summary-card" id="card-faturamento-hoje" hidden>
+      <span class="summary-label">Faturamento Hoje</span>
+      <span class="summary-value" id="summary-faturamento">R$ 0,00</span>
+    </div>
+  </div>
+
+  <div class="search-container">
+    <span class="search-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    </span>
+    <input type="text" id="search-tickets" class="search-input" placeholder="Pesquisar por cliente ou título...">
+  </div>
+
+  <div class="chamados-grid" style="grid-template-columns: 1fr;">
+    <section class="panel" aria-labelledby="lista-chamados" style="flex: 1;">
+      <h2 id="lista-chamados" class="panel-title">Chamados em fila</h2>
+      <ul id="lista" class="lista-grid"></ul>
+    </section>
+  </div>
+</div>
+
+<!-- Modal Novo Chamado — Tela Cheia -->
+<div id="modal-novo-chamado" class="ticket-fullscreen" hidden>
+  <!-- Header -->
+  <header class="tfs-header">
+    <div class="tfs-header-left">
+      <span class="tfs-num">Novo Chamado</span>
+    </div>
+    <div class="tfs-header-right">
+      <button type="button" class="tfs-btn-close" id="modal-novo-fechar" aria-label="Fechar">&times;</button>
+    </div>
+  </header>
+
+  <!-- Corpo -->
+  <div class="tfs-body">
+    <main class="tfs-main" style="max-width: 600px;">
+      <div class="info-box">
+        <label class="field-label" for="cliente_id">Cliente</label>
+        <select id="cliente_id" class="select-neon" required>
+          <option value="">Selecione o cliente</option>
+        </select>
+
+        <label class="field-label" for="prioridade">Prioridade</label>
+        <select id="prioridade" class="select-neon">
+          <option value="baixa">Baixa</option>
+          <option value="media">Média</option>
+          <option value="alta">Alta</option>
+        </select>
+
+        <label class="field-label">Título</label>
+        <div class="input-group">
+          <span class="input-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h10M4 18h14"/></svg>
+          </span>
+          <input type="text" id="titulo" placeholder="Título do Chamado" autocomplete="off">
+        </div>
+
+        <label class="field-label">Descrição</label>
+        <div class="input-group">
+          <span class="input-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+          </span>
+          <textarea id="descricao" placeholder="Descrição do problema ou solicitação" style="min-height:120px;"></textarea>
+        </div>
+
+        <div class="options wa-opt" style="margin-bottom:1.5rem;">
+          <label><input type="checkbox" id="wa_auto" checked> Notificar via WhatsApp</label>
+        </div>
+
+        <button type="button" class="btn-primary" id="btn-abrir-chamado">
+          <span class="btn-flare" aria-hidden="true"></span>
+          <span>Abrir Chamado</span>
+        </button>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Modal Detalhe Chamado — Tela Cheia -->
+<div id="modal-ticket-detalhe" class="ticket-fullscreen" hidden>
+  <!-- Header fixo -->
+  <header class="tfs-header">
+    <div class="tfs-header-left">
+      <span class="tfs-num" id="detalhe-titulo">#000</span>
+      <div class="tfs-client-block">
+        <span class="tfs-client-name" id="detalhe-cliente-header">CLIENTE</span>
+        <span class="tfs-status-badge" id="detalhe-status-label"></span>
+      </div>
+    </div>
+    <div class="tfs-header-center" id="detalhe-header-timer"></div>
+    <div class="tfs-header-right">
+      <div id="detalhe-agente-box"></div>
+      <button type="button" class="tfs-btn-icon" id="btn-imprimir-os" title="Imprimir O.S.">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+      </button>
+      <button type="button" class="tfs-btn-close" id="modal-detalhe-fechar" aria-label="Fechar">&times;</button>
+    </div>
+  </header>
+
+  <!-- Corpo com duas colunas -->
+  <div class="tfs-body">
+    <!-- Coluna principal -->
+    <main class="tfs-main">
+
+      <!-- Info do cliente expansível -->
+      <div id="detalhe-cliente-nome" class="tfs-client-card"></div>
+
+      <!-- Status + Agente -->
+      <div id="detalhe-status-edit-wrap" class="tfs-section" hidden>
+        <label class="field-label">Alterar Status</label>
+        <select id="detalhe-status-select" class="select-neon"></select>
+      </div>
+
+      <!-- Área de nota -->
+      <div class="tfs-note-area">
+        <div class="tfs-note-toolbar">
+          <label class="field-label" style="margin:0;">Nova Nota</label>
+          <!-- Botão bloco de notas com dropdown de pendências -->
+          <div class="tfs-notepad-wrap" id="notepad-wrap">
+            <button type="button" class="tfs-notepad-btn" id="btn-quick-msgs" title="Notas de Pendência Rápida">
+              <!-- Ícone bloco de notas -->
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="4" y="2" width="16" height="20" rx="2"/>
+                <line x1="8" y1="6" x2="16" y2="6"/>
+                <line x1="8" y1="10" x2="16" y2="10"/>
+                <line x1="8" y1="14" x2="13" y2="14"/>
+                <path d="M15 17l2 2 4-4" stroke="var(--neon)" stroke-width="2.5"/>
+              </svg>
+              <span>Pendências</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="tfs-chevron"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+
+            <!-- Dropdown de pendências -->
+            <div class="tfs-pending-dropdown" id="quick-msgs-popover" hidden>
+              <div class="tfs-pending-header">Selecione a pendência</div>
+
+              <button class="tfs-pending-item" data-status="pendente_fornecedor">
+                <span class="tfs-pending-icon tfs-pi-fornecedor">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 3h15v13H1z"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                </span>
+                <div class="tfs-pending-text">
+                  <strong>Aguardando Fornecedor</strong>
+                  <span>Peças solicitadas, aguardando entrega</span>
+                </div>
+              </button>
+
+              <button class="tfs-pending-item" data-status="pendente_usuario">
+                <span class="tfs-pending-icon tfs-pi-usuario">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </span>
+                <div class="tfs-pending-text">
+                  <strong>Aguardando Cliente</strong>
+                  <span>Orçamento enviado, aguardando aprovação</span>
+                </div>
+              </button>
+
+              <button class="tfs-pending-item" data-status="pendente_aprovacao">
+                <span class="tfs-pending-icon tfs-pi-aprovacao">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                </span>
+                <div class="tfs-pending-text">
+                  <strong>Pendente Aprovação Interna</strong>
+                  <span>Aguardando autorização da gestão</span>
+                </div>
+              </button>
+
+              <button class="tfs-pending-item" data-status="aprovado">
+                <span class="tfs-pending-icon tfs-pi-aprovado">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                </span>
+                <div class="tfs-pending-text">
+                  <strong>Aprovado — Em Andamento</strong>
+                  <span>Serviço autorizado, iniciando execução</span>
+                </div>
+              </button>
+
+              <button class="tfs-pending-item" data-status="concluido">
+                <span class="tfs-pending-icon tfs-pi-concluido">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                </span>
+                <div class="tfs-pending-text">
+                  <strong>Serviço Concluído</strong>
+                  <span>Reparo finalizado, disponível para retirada</span>
+                </div>
+              </button>
+
+              <button class="tfs-pending-item" data-status="cancelado">
+                <span class="tfs-pending-icon tfs-pi-cancelado">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                </span>
+                <div class="tfs-pending-text">
+                  <strong>Cancelado</strong>
+                  <span>Chamado encerrado sem execução</span>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <textarea id="detalhe-nota-input" class="note-textarea" placeholder="Digite uma nota técnica, atualização ou observação..."></textarea>
+
+        <div class="tfs-note-actions">
+          <button type="button" class="btn-primary" id="btn-add-nota-detalhe" style="flex:1; max-width: 220px;">
+            <span class="btn-flare" aria-hidden="true"></span>
+            <span>Adicionar Nota</span>
+          </button>
+          <button type="button" class="btn-primary" id="btn-nota-pendencia" style="display:none;"></button>
+          <select id="detalhe-mensagens-prontas" class="select-neon" style="flex:1; margin:0; max-width: 260px;"></select>
+        </div>
+      </div>
+
+      <!-- Histórico de notas -->
+      <div class="notes-history" id="detalhe-notas-lista"></div>
+
+      <!-- Peças -->
+      <div class="info-box" style="margin-top: 1.5rem;">
+        <h4>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+          Peças e Serviços Aplicados
+        </h4>
+        <div id="detalhe-pecas-lista" class="pecas-list" style="max-height: 180px; overflow-y: auto;"></div>
+        <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+          <select id="detalhe-peca-select" class="select-neon select-sm" style="flex: 1; margin:0;">
+            <option value="">Selecionar peça ou serviço...</option>
+          </select>
+          <button type="button" class="btn-primary btn-sm" id="btn-add-peca-detalhe" style="width: 50px; height: 40px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">+</button>
+        </div>
+      </div>
+    </main>
+
+    <!-- Coluna lateral -->
+    <aside class="tfs-sidebar">
+      <div id="detalhe-foto-container" class="info-box" style="display:none;">
+        <h4>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          Foto do Defeito
+        </h4>
+        <img id="detalhe-foto-img" src="" style="max-width:100%; border-radius:8px; cursor:pointer;">
+      </div>
+
+      <section class="info-box" id="detalhe-assinatura-wrap" style="display:none;">
+        <h4>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          Assinatura do Cliente
+        </h4>
+        <div id="assinatura-display" style="display:none; text-align:center; background:#fff; padding:0.5rem; border-radius:8px;">
+          <img id="img-assinatura-salva" src="" style="max-width:100%;">
+        </div>
+        <div id="assinatura-canvas-wrap" style="background:#fff; border-radius:8px; position:relative;">
+          <canvas id="signature-pad" style="width:100%; height:150px; cursor:crosshair;"></canvas>
+          <button type="button" class="btn-link" id="btn-limpar-assinatura" style="position:absolute; bottom:5px; right:5px; font-size:0.7rem; color:#333;">Limpar</button>
+        </div>
+      </section>
+    </aside>
+  </div>
+</div>
+
+<div id="modal-cliente" class="modal-overlay" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
+    <h3 id="modal-titulo" class="modal-title">Cliente</h3>
+    <div id="modal-cliente-body" class="modal-body"></div>
+    <button type="button" class="btn-primary modal-close" id="modal-fechar">Fechar</button>
+  </div>
+</div>
+
+<div id="modal-peca-edit" class="modal-overlay" hidden>
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Editar Valor da Peça</h2>
+      <button class="btn-close" id="modal-peca-edit-fechar">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="input-group">
+        <input type="number" id="peca-edit-valor" step="0.01" placeholder="Valor de Revenda (R$)">
+      </div>
+      <button type="button" class="btn-primary" id="btn-salvar-peca-valor">SALVAR VALOR</button>
+    </div>
+  </div>
+</div>
+
+<div class="system-pc-trigger" id="btn-system-pc" title="System Info">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+</div>
+</div>
+
+<script src="background.js"></script>
+<script src="auth.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
